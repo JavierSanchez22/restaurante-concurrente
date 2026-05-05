@@ -6,16 +6,17 @@
 #include "../include/shared_data.h"
 #include <thread>
 #include <vector>
+#include <cassert>
 
 using namespace std;
 
 void hiloCliente(MemoriaCompartida* mem, int id_cliente) {
+    assert(id_cliente >= 1 && id_cliente <= MAX_CLIENTES);
     cout << "[Cliente " << id_cliente << "] Llegó. Esperando mesa..." << endl;
     
-    sem_wait(&mem->sem_mesas_libres); // Ocupa una mesa
+    sem_wait(&mem->sem_mesas_libres);
     cout << "[Cliente " << id_cliente << "] Se sentó en una mesa." << endl;
 
-    // Envio de pedido
     sem_wait(&mem->sem_espacio_pedidos);
     sem_wait(&mem->mutex_pedidos);
     mem->cola_pedidos[mem->tail_pedidos] = id_cliente;
@@ -23,20 +24,18 @@ void hiloCliente(MemoriaCompartida* mem, int id_cliente) {
     sem_post(&mem->mutex_pedidos);
     sem_post(&mem->sem_pedidos_pendientes);
     
-    // Esperar comida
     cout << "[Cliente " << id_cliente << "] Ordenó. Esperando comida..." << endl;
-    sem_wait(&mem->sem_cliente_comiendo[id_cliente]); // Se bloquea hasta que el mesero le sirva
+    sem_wait(&mem->sem_cliente_comiendo[id_cliente]);
     
     cout << "[Cliente " << id_cliente << "] Está comiendo... ¡Qué rico!" << endl;
-    sleep(2); // Tiempo comiendo
+    sleep(2);
     
     cout << "[Cliente " << id_cliente << "] Terminó y liberó la mesa." << endl;
-    sem_post(&mem->sem_mesas_libres); // Libera la mesa al irse
+    sem_post(&mem->sem_mesas_libres);
 }
 
 void hiloCocinero(MemoriaCompartida* mem, int id_cocinero) {
     while (true) {
-        // Sacar pedido
         sem_wait(&mem->sem_pedidos_pendientes);
         sem_wait(&mem->mutex_pedidos);
         int id_cliente = mem->cola_pedidos[mem->head_pedidos];
@@ -45,21 +44,19 @@ void hiloCocinero(MemoriaCompartida* mem, int id_cocinero) {
         sem_post(&mem->sem_espacio_pedidos);
         
         cout << "[Cocinero " << id_cocinero << "] Preparando orden del Cliente " << id_cliente << "..." << endl;
-        sleep(rand() % 3 + 2); // Cocinando
+        sleep(rand() % 3 + 2);
         
-        // Enviar a comida lista
         sem_wait(&mem->sem_espacio_listos);
         sem_wait(&mem->mutex_listos);
         mem->cola_listos[mem->tail_listos] = id_cliente;
         mem->tail_listos = (mem->tail_listos + 1) % MAX_PEDIDOS;
         sem_post(&mem->mutex_listos);
-        sem_post(&mem->sem_comida_lista); // Avisa a los meseros
+        sem_post(&mem->sem_comida_lista);
     }
 }
 
 void hiloMesero(MemoriaCompartida* mem, int id_mesero) {
     while(true) {
-        // Tomar comida lista
         sem_wait(&mem->sem_comida_lista);
         sem_wait(&mem->mutex_listos);
         int id_cliente = mem->cola_listos[mem->head_listos];
@@ -68,37 +65,32 @@ void hiloMesero(MemoriaCompartida* mem, int id_mesero) {
         sem_post(&mem->sem_espacio_listos);
         
         cout << "[Mesero " << id_mesero << "] Llevando comida a la mesa del Cliente " << id_cliente << "." << endl;
-        sleep(1); // Tiempo caminando a la mesa
+        sleep(1);
         
-        // Despierta al cliente específico dándole su comida
         sem_post(&mem->sem_cliente_comiendo[id_cliente]); 
     }
 }
 
-// Nombre del bloque de memoria en /dev/shm
 const char* SHM_NAME = "/shm_restaurante";
 
 void procesoClientes(MemoriaCompartida* mem) {
     cout << "[Proceso Clientes] Abriendo puertas. PID: " << getpid() << endl;
-    srand(time(NULL) ^ getpid()); // Semilla para números aleatorios
+    srand(time(NULL) ^ getpid());
 
     vector<thread> clientes;
     int TOTAL_CLIENTES = 5;
 
-    // Genera 5 hilos (5 clientes)
     for (int i = 1; i <= TOTAL_CLIENTES; i++) {
         clientes.push_back(thread(hiloCliente, mem, i));
-        sleep(1); // Entra un cliente cada segundo
     }
 
-    // Se espera a que todos los clientes terminen de hacer su pedido
     for (auto& t : clientes) {
         if (t.joinable()) {
             t.join();
         }
     }
     
-    cout << "[Proceso Clientes] Todos los clientes han pedido." << endl;
+    cout << "[Proceso Clientes] Todos los clientes han terminado." << endl;
 }
 
 void procesoCocina(MemoriaCompartida* mem) {
@@ -106,9 +98,8 @@ void procesoCocina(MemoriaCompartida* mem) {
     srand(time(NULL) ^ getpid());
 
     vector<thread> cocineros;
-    int TOTAL_COCINEROS = 2; // Dos cocineros para sacar la tarea
+    int TOTAL_COCINEROS = 2;
 
-    // Hilos de los cocineros
     for (int i = 1; i <= TOTAL_COCINEROS; i++) {
         cocineros.push_back(thread(hiloCocinero, mem, i));
     }
@@ -117,7 +108,6 @@ void procesoCocina(MemoriaCompartida* mem) {
         t.detach();
     }
 
-    // Mantenemos el proceso cocina vivo mientras los hilos trabajan
     while(true) {
         sleep(10);
     }
@@ -126,7 +116,7 @@ void procesoCocina(MemoriaCompartida* mem) {
 void procesoServicio(MemoriaCompartida* mem) {
     cout << "[Proceso Servicio] Meseros listos. PID: " << getpid() << endl;
     vector<thread> meseros;
-    for (int i = 1; i <= 2; i++) { // 2 Meseros
+    for (int i = 1; i <= 2; i++) {
         meseros.push_back(thread(hiloMesero, mem, i));
         meseros.back().detach();
     }
@@ -136,31 +126,26 @@ void procesoServicio(MemoriaCompartida* mem) {
 int main() {
     cout << "--- Inicializando Memoria Compartida ---" << endl;
 
-    // Objeto de memoria compartida
     int shm_fd = shm_open(SHM_NAME, O_CREAT | O_RDWR, 0666);
     if (shm_fd == -1) {
         perror("Error en shm_open");
         return 1;
     }
 
-    // Tamaño de la memoria compartida
     if (ftruncate(shm_fd, sizeof(MemoriaCompartida)) == -1) {
         perror("Error en ftruncate");
         return 1;
     }
 
-    // Mapear la memoria a un puntero
     MemoriaCompartida* mem = (MemoriaCompartida*) mmap(NULL, sizeof(MemoriaCompartida), PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
     if (mem == MAP_FAILED) {
         perror("Error en mmap");
         return 1;
     }
 
-    // Inicializar variables
     mem->head_pedidos = 0; mem->tail_pedidos = 0; mem->count_pedidos = 0;
     mem->head_listos = 0; mem->tail_listos = 0; mem->count_listos = 0;
 
-    // Inicializar semáforos
     sem_init(&mem->mutex_pedidos, 1, 1);
     sem_init(&mem->sem_pedidos_pendientes, 1, 0);
     sem_init(&mem->sem_espacio_pedidos, 1, MAX_PEDIDOS);
@@ -171,7 +156,7 @@ int main() {
 
     sem_init(&mem->sem_mesas_libres, 1, MAX_MESAS);
     for(int i = 0; i <= MAX_CLIENTES; i++) {
-        sem_init(&mem->sem_cliente_comiendo[i], 1, 0); // Empiezan en 0 (esperando comida)
+        sem_init(&mem->sem_cliente_comiendo[i], 1, 0);
     }
 
     cout << "--- Iniciando Simulador de Restaurante ---" << endl;
@@ -195,7 +180,6 @@ int main() {
     }
 
     waitpid(pid_clientes, NULL, 0);
-    sleep(5); 
     kill(pid_cocina, SIGTERM);
     kill(pid_servicio, SIGTERM);
     waitpid(pid_cocina, NULL, 0);
@@ -203,9 +187,6 @@ int main() {
 
     cout << "--- Restaurante Cerrado ---" << endl;
 
-    cout << "--- Restaurante Cerrado ---" << endl;
-
-    // Limpieza (Evitar fugas de memoria en el sistema operativo)
     sem_destroy(&mem->mutex_pedidos);
     sem_destroy(&mem->sem_pedidos_pendientes);
     sem_destroy(&mem->sem_espacio_pedidos);
@@ -217,7 +198,7 @@ int main() {
         sem_destroy(&mem->sem_cliente_comiendo[i]);
     }
     munmap(mem, sizeof(MemoriaCompartida));
-    shm_unlink(SHM_NAME); // Borra el archivo virtual de /dev/shm
+    shm_unlink(SHM_NAME);
 
     return 0;
 }
