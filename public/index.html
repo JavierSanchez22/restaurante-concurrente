@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Restaurante CTRL</title>
+<style>
+  :root {
+    --bg: #dfded9;
+    --fg: #000000;
+    --accent: #ff4000;
+    --accent-blue: #0000ff;
+    --border: 3px solid #000;
+    --shadow: 6px 6px 0px #000;
+    --shadow-sm: 3px 3px 0px #000;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: system-ui, -apple-system, sans-serif;
+    padding: 2rem;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+  }
+
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    border-bottom: var(--border);
+    padding-bottom: 1rem;
+  }
+
+  .header h1 {
+    font-size: 2.5rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: -1px;
+  }
+
+  .badge {
+    padding: 0.5rem 1rem;
+    border: var(--border);
+    background: #fff;
+    font-weight: bold;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .badge.active { background: #bdf62d; }
+  .badge.stopped { background: var(--accent); color: #fff; }
+
+  .main-layout {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 2rem;
+    flex-grow: 1;
+    min-height: 0;
+  }
+
+  .panel {
+    background: #fff;
+    border: var(--border);
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .panel-header {
+    background: var(--fg);
+    color: #fff;
+    padding: 0.75rem 1rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    font-size: 0.9rem;
+  }
+
+  .panel-content {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .input-group { display: flex; flex-direction: column; gap: 0.5rem; }
+  .input-group label { font-weight: bold; font-size: 0.85rem; text-transform: uppercase; }
+  .input-group input { border: 2px solid var(--fg); padding: 0.5rem; font-size: 1rem; font-weight: bold; outline: none; }
+  .input-group input:focus { background: #f0f0f0; }
+
+  .btn-row { display: flex; gap: 1rem; margin-top: 1rem; }
+
+  button {
+    flex: 1; padding: 0.75rem; border: 2px solid var(--fg); background: #fff;
+    font-weight: bold; text-transform: uppercase; cursor: pointer;
+    box-shadow: var(--shadow-sm); transition: transform 0.1s, box-shadow 0.1s;
+  }
+  button:active { transform: translate(3px, 3px); box-shadow: 0px 0px 0px var(--fg); }
+  button.btn-start { background: #bdf62d; }
+  button.btn-stop { background: var(--accent); color: white; }
+  
+  /* Botón especial de Análisis */
+  .btn-analysis {
+    background: #fff; border: 3px solid var(--accent); color: var(--accent);
+    margin-top: 1rem; display: none; font-size: 0.9rem;
+  }
+  .btn-analysis.visible { display: block; animation: flash 1s infinite alternate; }
+  @keyframes flash { from { background: #fff; } to { background: #ffd0c4; } }
+
+  .log-viewer {
+    flex-grow: 1; background: #f8f8f8; border-top: var(--border); padding: 1rem;
+    overflow-y: auto; font-family: 'Courier New', Courier, monospace; font-size: 0.85rem; line-height: 1.4;
+  }
+
+  .log-line { padding: 0.25rem 0; border-bottom: 1px solid #ddd; display: flex; gap: 1rem; }
+  .log-ts { font-weight: bold; color: #666; width: 70px; flex-shrink: 0;}
+  .log-type { font-weight: bold; width: 80px; flex-shrink: 0; }
+  .log-msg { color: #111; }
+
+  .type-DEADLOCK { background: var(--accent); color: white; padding: 0 4px; }
+  .type-RECURSO { background: var(--accent-blue); color: white; padding: 0 4px; }
+  .type-PEDIDO { color: #0000ff; }
+  .type-COCINA { color: #ff00ff; }
+
+  .stats-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; padding: 1.5rem; border-bottom: var(--border);
+  }
+  .stat-box { border: 2px solid var(--fg); padding: 1rem; text-align: center; }
+  .stat-box .lbl { font-size: 0.7rem; font-weight: bold; text-transform: uppercase; margin-bottom: 0.5rem; }
+  .stat-box .val { font-size: 1.8rem; font-weight: 900; }
+  .stat-box.alert { background: var(--accent); color: white; }
+
+  /* --- Modal Neo-Brutalista --- */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none;
+    justify-content: center; align-items: center; z-index: 1000; padding: 2rem;
+  }
+  .modal-overlay.active { display: flex; }
+  .modal-content {
+    background: #fff; border: var(--border); box-shadow: 12px 12px 0px #000;
+    width: 100%; max-width: 800px; max-height: 90vh; overflow-y: auto; display: flex; flex-direction: column;
+  }
+  .modal-header {
+    background: var(--accent); color: #fff; padding: 1.5rem; font-size: 1.5rem; font-weight: 900;
+    display: flex; justify-content: space-between; align-items: center; border-bottom: var(--border);
+  }
+  .close-btn { background: none; border: none; color: #fff; font-size: 2rem; cursor: pointer; box-shadow: none; padding: 0; }
+  .modal-body { padding: 2rem; font-size: 1rem; line-height: 1.6; }
+  
+  .code-block {
+    background: #111; color: #bdf62d; padding: 1rem; font-family: monospace;
+    border: var(--border); margin: 1rem 0; overflow-x: auto;
+  }
+</style>
+</head>
+<body>
+
+  <header class="header">
+    <h1>Restaurante_CTRL</h1>
+    <div id="status-badge" class="badge stopped">OFFLINE</div>
+  </header>
+
+  <div class="main-layout">
+    
+    <aside class="panel">
+      <div class="panel-header">Parámetros del Sistema</div>
+      <div class="panel-content">
+        <form id="config-form">
+          <div class="input-group">
+            <label>Nº Clientes</label>
+            <input type="number" id="inp-clientes" value="15" min="1" max="20">
+          </div>
+          <div class="input-group">
+            <label>Nº Cocineros</label>
+            <input type="number" id="inp-cocineros" value="2" min="2" help="Mínimo 2 para causar deadlock">
+          </div>
+          <div class="input-group">
+            <label>Nº Meseros</label>
+            <input type="number" id="inp-meseros" value="2" min="1">
+          </div>
+          <div class="input-group">
+            <label>Nº Mesas</label>
+            <input type="number" id="inp-mesas" value="5" min="1" max="10">
+          </div>
+          
+          <div class="btn-row">
+            <button type="button" class="btn-start" onclick="startSim()">Iniciar</button>
+            <button type="button" class="btn-stop" onclick="stopSim()">Forzar Paro</button>
+          </div>
+        </form>
+      </div>
+    </aside>
+
+    <main class="panel" style="overflow: hidden;">
+      <div class="panel-header">Monitor en Tiempo Real</div>
+      
+      <div class="stats-grid">
+        <div class="stat-box">
+          <div class="lbl">Atendidos</div>
+          <div class="val" id="stat-atendidos">0</div>
+        </div>
+        <div class="stat-box">
+          <div class="lbl">Espera Prom.</div>
+          <div class="val" id="stat-espera">0s</div>
+        </div>
+        <div class="stat-box" id="box-deadlocks">
+          <div class="lbl">Deadlocks Detectados</div>
+          <div class="val" id="stat-deadlocks">0</div>
+        </div>
+      </div>
+
+      <div class="log-viewer" id="log-viewer">
+        <div style="color: #666; font-style: italic;">Esperando inicio de simulación...</div>
+      </div>
+    </main>
+
+  </div>
+<script>
+  let isRunning = false;
+  let lastLogLength = 0;
+  let stats = { atendidos: 0, deadlocks: 0, totalEspera: 0 };
+
+  async function startSim() {
+    const data = {
+      clientes: document.getElementById('inp-clientes').value,
+      cocineros: document.getElementById('inp-cocineros').value,
+      meseros: document.getElementById('inp-meseros').value,
+      mesas: document.getElementById('inp-mesas').value
+    };
+
+    try {
+      const res = await fetch('/api/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      if (res.ok) {
+        isRunning = true;
+        updateBadge();
+        document.getElementById('log-viewer').innerHTML = '';
+        lastLogLength = 0;
+        stats = { atendidos: 0, deadlocks: 0, totalEspera: 0 };
+        document.getElementById('box-deadlocks').classList.remove('alert');
+        updateStatsUI();
+      } else {
+        const err = await res.json();
+        alert(err.error);
+      }
+    } catch (e) {
+      alert("Error conectando con el servidor local.");
+    }
+  }
+
+  async function stopSim() {
+    try {
+      const res = await fetch('/api/stop', { method: 'POST' });
+      if (res.ok) {
+        isRunning = false;
+        updateBadge();
+      }
+    } catch (e) { }
+  }
+
+  function updateBadge() {
+    const b = document.getElementById('status-badge');
+    if (isRunning) {
+      b.textContent = 'RUNNING'; b.className = 'badge active';
+    } else {
+      b.textContent = 'OFFLINE'; b.className = 'badge stopped';
+    }
+  }
+
+  async function pollLogs() {
+    try {
+      const res = await fetch('/api/logs');
+      const text = await res.text();
+      const lines = text.trim().split('\n').filter(Boolean);
+
+      if (lines.length > lastLogLength) {
+        const newLines = lines.slice(lastLogLength);
+        lastLogLength = lines.length;
+
+        const viewer = document.getElementById('log-viewer');
+        const isScrolledToBottom = viewer.scrollHeight - viewer.clientHeight <= viewer.scrollTop + 50;
+
+        newLines.forEach(line => {
+          const parts = line.split('|');
+          if (parts.length < 3) return;
+          const [ts, type, msg] = parts;
+          
+          if (type === 'COMIENDO') {
+            stats.atendidos++;
+            const e = msg.match(/Espera total: (\d+)s/);
+            if (e) stats.totalEspera += parseInt(e[1]);
+          }
+          if (type === 'DEADLOCK' && msg.includes('DETECTADO')) {
+            stats.deadlocks++;
+            document.getElementById('box-deadlocks').classList.add('alert');
+            
+            // Insertar bloque explicativo directamente en el log
+            const explanation = document.createElement('div');
+            explanation.style.background = '#111';
+            explanation.style.color = '#fff';
+            explanation.style.padding = '10px';
+            explanation.style.margin = '10px 0';
+            explanation.style.borderLeft = '5px solid #ff4000';
+            explanation.innerHTML = `
+              <strong style="color: #ff4000;">[ANÁLISIS DE INTERBLOQUEO]</strong><br>
+              <strong>Causa:</strong> Espera circular entre recursos (Horno/Sartén).<br>
+              <strong>Estado:</strong> Los cocineros entraron en un ciclo de dependencia mutua.<br>
+              <strong>Resolución:</strong> Se forzó la liberación de un recurso (Time-out) para romper el ciclo de Coffman.
+            `;
+            viewer.appendChild(explanation);
+          }
+          if (type === 'SISTEMA' && msg.includes('Restaurante Cerrado')) {
+            isRunning = false;
+            updateBadge();
+          }
+
+          const div = document.createElement('div');
+          div.className = 'log-line';
+          div.innerHTML = `<span class="log-ts">${ts}</span><span class="log-type type-${type}">${type}</span><span class="log-msg">${msg.replace(/</g, '&lt;')}</span>`;
+          viewer.appendChild(div);
+        });
+
+        updateStatsUI();
+        if (isScrolledToBottom) viewer.scrollTop = viewer.scrollHeight;
+      }
+    } catch (e) {}
+  }
+
+  function updateStatsUI() {
+    document.getElementById('stat-atendidos').textContent = stats.atendidos;
+    document.getElementById('stat-espera').textContent = stats.atendidos > 0 ? Math.round(stats.totalEspera / stats.atendidos) + 's' : '0s';
+    document.getElementById('stat-deadlocks').textContent = stats.deadlocks;
+  }
+
+  setInterval(pollLogs, 800);
+</script>
+</body>
+</html>

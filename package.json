@@ -1,0 +1,27 @@
+{
+  "name": "restaurante-concurrente",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JavierSanchez22/restaurante-concurrente.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/JavierSanchez22/restaurante-concurrente/issues"
+  },
+  "homepage": "https://github.com/JavierSanchez22/restaurante-concurrente#readme",
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}
