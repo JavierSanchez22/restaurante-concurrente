@@ -18,14 +18,16 @@ app.post('/api/start', (req, res) => {
     if (!fs.existsSync('logs')) fs.mkdirSync('logs');
     fs.writeFileSync('logs/restaurante.log', '');
 
-    const { clientes, cocineros, meseros, mesas } = req.body;
+    const { clientes, cocineros, meseros, mesas, hornos, sartenes } = req.body;
     
     // Construir argumentos
     const args = [
         '--clientes', clientes || 5,
         '--cocineros', cocineros || 2,
         '--meseros', meseros || 2,
-        '--mesas', mesas || 3
+        '--mesas', mesas || 3,
+        '--hornos', hornos || 1,
+        '--sartenes', sartenes || 1
     ];
 
     console.log('Iniciando binario con args:', args);

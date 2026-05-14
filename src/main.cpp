@@ -340,6 +340,8 @@ void mostrarAyuda(const char* prog) {
          << "  --cocineros N   Numero de cocineros (default 2)\n"
          << "  --meseros   N   Numero de meseros   (default 2)\n"
          << "  --mesas     N   Numero de mesas     (default 3, max " << MAX_MESAS << ")\n"
+         << "  --hornos    N   Numero de hornos    (default 1)\n"
+         << "  --sartenes  N   Numero de sartenes  (default 1)\n"
          << "  --ayuda         Muestra este mensaje\n";
 }
 
@@ -349,6 +351,8 @@ int main(int argc, char* argv[]) {
     int num_cocineros = 2;
     int num_meseros   = 2;
     int num_mesas     = 3;
+    int num_hornos    = 1;
+    int num_sartenes  = 1;
 
     // Parsear argumentos
     for (int i = 1; i < argc; i++) {
@@ -356,6 +360,8 @@ int main(int argc, char* argv[]) {
         else if (strcmp(argv[i], "--cocineros") == 0 && i+1 < argc) num_cocineros = atoi(argv[++i]);
         else if (strcmp(argv[i], "--meseros")   == 0 && i+1 < argc) num_meseros   = atoi(argv[++i]);
         else if (strcmp(argv[i], "--mesas")     == 0 && i+1 < argc) num_mesas     = atoi(argv[++i]);
+        else if (strcmp(argv[i], "--hornos")    == 0 && i+1 < argc) num_hornos    = atoi(argv[++i]);
+        else if (strcmp(argv[i], "--sartenes")  == 0 && i+1 < argc) num_sartenes  = atoi(argv[++i]);
         else if (strcmp(argv[i], "--ayuda")     == 0) { mostrarAyuda(argv[0]); return 0; }
     }
 
@@ -364,6 +370,8 @@ int main(int argc, char* argv[]) {
     if (num_cocineros < 1)  { cerr << "Error: mínimo 1 cocinero\n";  return 1; }
     if (num_meseros   < 1)  { cerr << "Error: mínimo 1 mesero\n";    return 1; }
     if (num_mesas     < 1 || num_mesas > MAX_MESAS) { cerr << "Error: mesas entre 1 y " << MAX_MESAS << "\n"; return 1; }
+    if (num_hornos    < 1)  { cerr << "Error: mínimo 1 horno\n";     return 1; }
+    if (num_sartenes  < 1)  { cerr << "Error: mínima 1 sartén\n";    return 1; }
 
     // Crear carpeta de logs
     system("mkdir -p logs && > logs/restaurante.log");
@@ -373,6 +381,8 @@ int main(int argc, char* argv[]) {
          << "  Cocineros: " << num_cocineros << "\n"
          << "  Meseros:   " << num_meseros   << "\n"
          << "  Mesas:     " << num_mesas     << "\n"
+         << "  Hornos:    " << num_hornos    << "\n"
+         << "  Sartenes:  " << num_sartenes  << "\n"
          << "---------------------\n";
 
     // Crear memoria compartida
@@ -393,6 +403,8 @@ int main(int argc, char* argv[]) {
     mem->num_cocineros = num_cocineros;
     mem->num_meseros   = num_meseros;
     mem->num_mesas     = num_mesas;
+    mem->num_hornos    = num_hornos;
+    mem->num_sartenes  = num_sartenes;
 
     // Colas
     mem->head_pedidos = 0; mem->tail_pedidos = 0; mem->count_pedidos = 0;
@@ -417,8 +429,8 @@ int main(int argc, char* argv[]) {
     sem_init(&mem->sem_comida_lista,       1, 0);
     sem_init(&mem->sem_espacio_listos,     1, MAX_PEDIDOS);
 
-    sem_init(&mem->sem_horno,              1, 1); // 1 horno
-    sem_init(&mem->sem_sarten,             1, 1); // 1 sarten
+    sem_init(&mem->sem_horno,              1, num_hornos);
+    sem_init(&mem->sem_sarten,             1, num_sartenes);
 
     sem_init(&mem->sem_mesas_libres,       1, num_mesas);
     sem_init(&mem->mutex_stats,            1, 1);
@@ -433,7 +445,9 @@ int main(int argc, char* argv[]) {
     escribirLog("CONFIG",  "clientes=" + to_string(num_clientes) +
                            " cocineros=" + to_string(num_cocineros) +
                            " meseros=" + to_string(num_meseros) +
-                           " mesas=" + to_string(num_mesas));
+                           " mesas=" + to_string(num_mesas) +
+                           " hornos=" + to_string(num_hornos) +
+                           " sartenes=" + to_string(num_sartenes));
 
     // Fork de los 3 procesos
     pid_t pid_clientes = fork();

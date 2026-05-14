@@ -24,6 +24,8 @@ struct MemoriaCompartida {
     int num_cocineros;
     int num_meseros;
     int num_mesas;
+    int num_hornos;
+    int num_sartenes;
 
     // 1. Cola de Pedidos con prioridad (Cliente -> Cocina)
     Pedido cola_pedidos[MAX_PEDIDOS];

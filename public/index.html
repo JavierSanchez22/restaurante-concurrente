@@ -171,19 +171,27 @@
         <form id="config-form">
           <div class="input-group">
             <label>Nº Clientes</label>
-            <input type="number" id="inp-clientes" value="15" min="1" max="20">
+            <input type="number" id="inp-clientes" value="0" min="1" max="20">
           </div>
           <div class="input-group">
             <label>Nº Cocineros</label>
-            <input type="number" id="inp-cocineros" value="2" min="2" help="Mínimo 2 para causar deadlock">
+            <input type="number" id="inp-cocineros" value="0" min="2" help="Mínimo 2 para causar deadlock">
           </div>
           <div class="input-group">
             <label>Nº Meseros</label>
-            <input type="number" id="inp-meseros" value="2" min="1">
+            <input type="number" id="inp-meseros" value="0" min="1">
           </div>
           <div class="input-group">
             <label>Nº Mesas</label>
             <input type="number" id="inp-mesas" value="5" min="1" max="10">
+          </div>
+          <div class="input-group">
+            <label>Nº Hornos</label>
+            <input type="number" id="inp-hornos" value="1" min="1">
+          </div>
+          <div class="input-group">
+            <label>Nº Sartenes</label>
+            <input type="number" id="inp-sartenes" value="1" min="1">
           </div>
           
           <div class="btn-row">
@@ -220,7 +228,9 @@
   </div>
 <script>
   let isRunning = false;
+  let hasStarted = false; // Nueva bandera para evitar logs antiguos al cargar
   let lastLogLength = 0;
+  let logQueue = []; // Cola para procesar logs lentamente
   let stats = { atendidos: 0, deadlocks: 0, totalEspera: 0 };
 
   async function startSim() {
@@ -228,7 +238,9 @@
       clientes: document.getElementById('inp-clientes').value,
       cocineros: document.getElementById('inp-cocineros').value,
       meseros: document.getElementById('inp-meseros').value,
-      mesas: document.getElementById('inp-mesas').value
+      mesas: document.getElementById('inp-mesas').value,
+      hornos: document.getElementById('inp-hornos').value,
+      sartenes: document.getElementById('inp-sartenes').value
     };
 
     try {
@@ -239,9 +251,11 @@
       });
       if (res.ok) {
         isRunning = true;
+        hasStarted = true; // Marcamos que la sesión ha iniciado
         updateBadge();
         document.getElementById('log-viewer').innerHTML = '';
         lastLogLength = 0;
+        logQueue = []; // Limpiamos la cola
         stats = { atendidos: 0, deadlocks: 0, totalEspera: 0 };
         document.getElementById('box-deadlocks').classList.remove('alert');
         updateStatsUI();
@@ -274,6 +288,8 @@
   }
 
   async function pollLogs() {
+    if (!hasStarted) return; // No pedimos logs si no hemos iniciado la simulación en esta carga
+
     try {
       const res = await fetch('/api/logs');
       const text = await res.text();
@@ -282,54 +298,64 @@
       if (lines.length > lastLogLength) {
         const newLines = lines.slice(lastLogLength);
         lastLogLength = lines.length;
-
-        const viewer = document.getElementById('log-viewer');
-        const isScrolledToBottom = viewer.scrollHeight - viewer.clientHeight <= viewer.scrollTop + 50;
-
+        
+        // En lugar de procesar todo, lo metemos a la cola
         newLines.forEach(line => {
           const parts = line.split('|');
-          if (parts.length < 3) return;
-          const [ts, type, msg] = parts;
-          
-          if (type === 'COMIENDO') {
-            stats.atendidos++;
-            const e = msg.match(/Espera total: (\d+)s/);
-            if (e) stats.totalEspera += parseInt(e[1]);
+          if (parts.length >= 3) {
+            logQueue.push({ ts: parts[0], type: parts[1], msg: parts[2] });
           }
-          if (type === 'DEADLOCK' && msg.includes('DETECTADO')) {
-            stats.deadlocks++;
-            document.getElementById('box-deadlocks').classList.add('alert');
-            
-            // Insertar bloque explicativo directamente en el log
-            const explanation = document.createElement('div');
-            explanation.style.background = '#111';
-            explanation.style.color = '#fff';
-            explanation.style.padding = '10px';
-            explanation.style.margin = '10px 0';
-            explanation.style.borderLeft = '5px solid #ff4000';
-            explanation.innerHTML = `
-              <strong style="color: #ff4000;">[ANÁLISIS DE INTERBLOQUEO]</strong><br>
-              <strong>Causa:</strong> Espera circular entre recursos (Horno/Sartén).<br>
-              <strong>Estado:</strong> Los cocineros entraron en un ciclo de dependencia mutua.<br>
-              <strong>Resolución:</strong> Se forzó la liberación de un recurso (Time-out) para romper el ciclo de Coffman.
-            `;
-            viewer.appendChild(explanation);
-          }
-          if (type === 'SISTEMA' && msg.includes('Restaurante Cerrado')) {
-            isRunning = false;
-            updateBadge();
-          }
-
-          const div = document.createElement('div');
-          div.className = 'log-line';
-          div.innerHTML = `<span class="log-ts">${ts}</span><span class="log-type type-${type}">${type}</span><span class="log-msg">${msg.replace(/</g, '&lt;')}</span>`;
-          viewer.appendChild(div);
         });
-
-        updateStatsUI();
-        if (isScrolledToBottom) viewer.scrollTop = viewer.scrollHeight;
       }
     } catch (e) {}
+  }
+
+  // Función para procesar la cola de logs "despacio"
+  function processQueue() {
+    if (logQueue.length === 0) return;
+
+    const entry = logQueue.shift();
+    const { ts, type, msg } = entry;
+    const viewer = document.getElementById('log-viewer');
+    const isScrolledToBottom = viewer.scrollHeight - viewer.clientHeight <= viewer.scrollTop + 50;
+
+    if (type === 'COMIENDO') {
+      stats.atendidos++;
+      const e = msg.match(/Espera total: (\d+)s/);
+      if (e) stats.totalEspera += parseInt(e[1]);
+    }
+    
+    if (type === 'DEADLOCK' && msg.includes('DETECTADO')) {
+      stats.deadlocks++;
+      document.getElementById('box-deadlocks').classList.add('alert');
+      
+      const explanation = document.createElement('div');
+      explanation.style.background = '#111';
+      explanation.style.color = '#fff';
+      explanation.style.padding = '10px';
+      explanation.style.margin = '10px 0';
+      explanation.style.borderLeft = '5px solid #ff4000';
+      explanation.innerHTML = `
+        <strong style="color: #ff4000;">[ANÁLISIS DE INTERBLOQUEO]</strong><br>
+        <strong>Causa:</strong> Espera circular entre recursos (Horno/Sartén).<br>
+        <strong>Estado:</strong> Los cocineros entraron en un ciclo de dependencia mutua.<br>
+        <strong>Resolución:</strong> Se forzó la liberación de un recurso (Time-out) para romper el ciclo de Coffman.
+      `;
+      viewer.appendChild(explanation);
+    }
+    
+    if (type === 'SISTEMA' && msg.includes('Restaurante Cerrado')) {
+      isRunning = false;
+      updateBadge();
+    }
+
+    const div = document.createElement('div');
+    div.className = 'log-line';
+    div.innerHTML = `<span class="log-ts">${ts}</span><span class="log-type type-${type}">${type}</span><span class="log-msg">${msg.replace(/</g, '&lt;')}</span>`;
+    viewer.appendChild(div);
+
+    updateStatsUI();
+    if (isScrolledToBottom) viewer.scrollTop = viewer.scrollHeight;
   }
 
   function updateStatsUI() {
@@ -338,7 +364,10 @@
     document.getElementById('stat-deadlocks').textContent = stats.deadlocks;
   }
 
-  setInterval(pollLogs, 800);
+  // Polleamos el servidor cada 1 segundo
+  setInterval(pollLogs, 1000);
+  // Procesamos la cola visual cada 150ms para que aparezcan "despacio"
+  setInterval(processQueue, 150);
 </script>
 </body>
 </html>
