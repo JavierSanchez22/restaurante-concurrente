@@ -62,6 +62,67 @@
     min-height: 0;
   }
 
+  .visual-container {
+    display: grid;
+    grid-template-rows: 1fr 1fr;
+    gap: 1.5rem;
+    overflow: hidden;
+  }
+
+  .visual-box {
+    border: var(--border);
+    background: #fff;
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .visual-header {
+    background: var(--fg);
+    color: #fff;
+    padding: 0.5rem 1rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .visual-content {
+    padding: 1rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    overflow-y: auto;
+    align-content: flex-start;
+  }
+
+  .entity {
+    width: 100px;
+    height: 100px;
+    border: 2px solid var(--fg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    font-size: 0.7rem;
+    font-weight: bold;
+    background: #eee;
+    transition: all 0.2s;
+    box-shadow: 2px 2px 0px #000;
+  }
+
+  .entity.active { background: #bdf62d; }
+  .entity.waiting { background: #ffeb3b; }
+  .entity.busy { background: var(--accent); color: white; }
+  .entity.using { background: var(--accent-blue); color: white; }
+
+  .entity-icon { font-size: 1.5rem; margin-bottom: 0.25rem; }
+  .entity-id { text-transform: uppercase; margin-bottom: 2px; }
+  .entity-status { font-size: 0.6rem; opacity: 0.8; }
+
   .panel {
     background: #fff;
     border: var(--border);
@@ -102,58 +163,34 @@
   button.btn-start { background: #bdf62d; }
   button.btn-stop { background: var(--accent); color: white; }
   
-  /* Botón especial de Análisis */
-  .btn-analysis {
-    background: #fff; border: 3px solid var(--accent); color: var(--accent);
-    margin-top: 1rem; display: none; font-size: 0.9rem;
-  }
-  .btn-analysis.visible { display: block; animation: flash 1s infinite alternate; }
-  @keyframes flash { from { background: #fff; } to { background: #ffd0c4; } }
-
   .log-viewer {
-    flex-grow: 1; background: #f8f8f8; border-top: var(--border); padding: 1rem;
-    overflow-y: auto; font-family: 'Courier New', Courier, monospace; font-size: 0.85rem; line-height: 1.4;
+    height: 150px;
+    background: #f8f8f8;
+    border-top: var(--border);
+    padding: 1rem;
+    overflow-y: auto;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.75rem;
+    line-height: 1.2;
   }
 
-  .log-line { padding: 0.25rem 0; border-bottom: 1px solid #ddd; display: flex; gap: 1rem; }
-  .log-ts { font-weight: bold; color: #666; width: 70px; flex-shrink: 0;}
-  .log-type { font-weight: bold; width: 80px; flex-shrink: 0; }
+  .log-line { padding: 0.15rem 0; border-bottom: 1px solid #ddd; display: flex; gap: 0.5rem; }
+  .log-ts { font-weight: bold; color: #666; width: 60px; flex-shrink: 0;}
+  .log-type { font-weight: bold; width: 70px; flex-shrink: 0; font-size: 0.7rem; }
   .log-msg { color: #111; }
 
-  .type-DEADLOCK { background: var(--accent); color: white; padding: 0 4px; }
-  .type-RECURSO { background: var(--accent-blue); color: white; padding: 0 4px; }
+  .type-DEADLOCK { background: var(--accent); color: white; padding: 0 2px; }
+  .type-RECURSO { background: var(--accent-blue); color: white; padding: 0 2px; }
   .type-PEDIDO { color: #0000ff; }
   .type-COCINA { color: #ff00ff; }
 
   .stats-grid {
-    display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; padding: 1.5rem; border-bottom: var(--border);
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; padding: 1rem; border-bottom: var(--border);
   }
-  .stat-box { border: 2px solid var(--fg); padding: 1rem; text-align: center; }
-  .stat-box .lbl { font-size: 0.7rem; font-weight: bold; text-transform: uppercase; margin-bottom: 0.5rem; }
-  .stat-box .val { font-size: 1.8rem; font-weight: 900; }
+  .stat-box { border: 2px solid var(--fg); padding: 0.5rem; text-align: center; }
+  .stat-box .lbl { font-size: 0.6rem; font-weight: bold; text-transform: uppercase; margin-bottom: 0.25rem; }
+  .stat-box .val { font-size: 1.4rem; font-weight: 900; }
   .stat-box.alert { background: var(--accent); color: white; }
-
-  /* --- Modal Neo-Brutalista --- */
-  .modal-overlay {
-    position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none;
-    justify-content: center; align-items: center; z-index: 1000; padding: 2rem;
-  }
-  .modal-overlay.active { display: flex; }
-  .modal-content {
-    background: #fff; border: var(--border); box-shadow: 12px 12px 0px #000;
-    width: 100%; max-width: 800px; max-height: 90vh; overflow-y: auto; display: flex; flex-direction: column;
-  }
-  .modal-header {
-    background: var(--accent); color: #fff; padding: 1.5rem; font-size: 1.5rem; font-weight: 900;
-    display: flex; justify-content: space-between; align-items: center; border-bottom: var(--border);
-  }
-  .close-btn { background: none; border: none; color: #fff; font-size: 2rem; cursor: pointer; box-shadow: none; padding: 0; }
-  .modal-body { padding: 2rem; font-size: 1rem; line-height: 1.6; }
-  
-  .code-block {
-    background: #111; color: #bdf62d; padding: 1rem; font-family: monospace;
-    border: var(--border); margin: 1rem 0; overflow-x: auto;
-  }
 </style>
 </head>
 <body>
@@ -167,19 +204,19 @@
     
     <aside class="panel">
       <div class="panel-header">Parámetros del Sistema</div>
-      <div class="panel-content">
+      <div class="panel-content" style="padding: 1rem; gap: 0.75rem;">
         <form id="config-form">
           <div class="input-group">
             <label>Nº Clientes</label>
-            <input type="number" id="inp-clientes" value="0" min="1" max="20">
+            <input type="number" id="inp-clientes" value="10" min="1" max="20">
           </div>
           <div class="input-group">
             <label>Nº Cocineros</label>
-            <input type="number" id="inp-cocineros" value="0" min="2" help="Mínimo 2 para causar deadlock">
+            <input type="number" id="inp-cocineros" value="2" min="1">
           </div>
           <div class="input-group">
             <label>Nº Meseros</label>
-            <input type="number" id="inp-meseros" value="0" min="1">
+            <input type="number" id="inp-meseros" value="2" min="1">
           </div>
           <div class="input-group">
             <label>Nº Mesas</label>
@@ -196,7 +233,7 @@
           
           <div class="btn-row">
             <button type="button" class="btn-start" onclick="startSim()">Iniciar</button>
-            <button type="button" class="btn-stop" onclick="stopSim()">Forzar Paro</button>
+            <button type="button" class="btn-stop" onclick="stopSim()">Parar</button>
           </div>
         </form>
       </div>
@@ -215,23 +252,131 @@
           <div class="val" id="stat-espera">0s</div>
         </div>
         <div class="stat-box" id="box-deadlocks">
-          <div class="lbl">Deadlocks Detectados</div>
+          <div class="lbl">Deadlocks</div>
           <div class="val" id="stat-deadlocks">0</div>
         </div>
       </div>
 
+      <div class="visual-container">
+        <div class="visual-box">
+          <div class="visual-header">
+            <span>COCINA (Cocineros, Hornos, Sartenes)</span>
+            <span id="kitchen-status">STANDBY</span>
+          </div>
+          <div class="visual-content" id="kitchen-content">
+            <!-- Dinámico -->
+          </div>
+        </div>
+        <div class="visual-box">
+          <div class="visual-header">
+            <span>SALA (Mesas, Meseros)</span>
+            <span id="room-status">CERRADO</span>
+          </div>
+          <div class="visual-content" id="room-content">
+            <!-- Dinámico -->
+          </div>
+        </div>
+      </div>
+
       <div class="log-viewer" id="log-viewer">
-        <div style="color: #666; font-style: italic;">Esperando inicio de simulación...</div>
+        <div style="color: #666; font-style: italic;">Esperando inicio...</div>
       </div>
     </main>
 
   </div>
 <script>
   let isRunning = false;
-  let hasStarted = false; // Nueva bandera para evitar logs antiguos al cargar
+  let hasStarted = false;
   let lastLogLength = 0;
-  let logQueue = []; // Cola para procesar logs lentamente
+  let logQueue = [];
   let stats = { atendidos: 0, deadlocks: 0, totalEspera: 0 };
+  
+  // Estado de las entidades
+  let state = {
+    cocineros: {},
+    meseros: {},
+    mesas: {},
+    hornos: {},
+    sartenes: {}
+  };
+
+  function initEntities() {
+    const nCocineros = parseInt(document.getElementById('inp-cocineros').value);
+    const nMeseros = parseInt(document.getElementById('inp-meseros').value);
+    const nMesas = parseInt(document.getElementById('inp-mesas').value);
+    const nHornos = parseInt(document.getElementById('inp-hornos').value);
+    const nSartenes = parseInt(document.getElementById('inp-sartenes').value);
+
+    state = { cocineros: {}, meseros: {}, mesas: {}, hornos: {}, sartenes: {} };
+    
+    const kitchen = document.getElementById('kitchen-content');
+    const room = document.getElementById('room-content');
+    kitchen.innerHTML = '';
+    room.innerHTML = '';
+
+    // Crear Cocineros
+    for (let i = 1; i <= nCocineros; i++) {
+      state.cocineros[i] = { status: 'LIBRE', client: null };
+      createEntity('kitchen-content', `coc-${i}`, '👨‍🍳', `Coc. ${i}`, 'LIBRE');
+    }
+    // Crear Hornos
+    for (let i = 1; i <= nHornos; i++) {
+      state.hornos[i] = { status: 'LIBRE' };
+      createEntity('kitchen-content', `hor-${i}`, '🔥', `Horno ${i}`, 'LIBRE');
+    }
+    // Crear Sartenes
+    for (let i = 1; i <= nSartenes; i++) {
+      state.sartenes[i] = { status: 'LIBRE' };
+      createEntity('kitchen-content', `sar-${i}`, '🍳', `Sartén ${i}`, 'LIBRE');
+    }
+
+    // Crear Mesas
+    for (let i = 1; i <= nMesas; i++) {
+      state.mesas[i] = { status: 'LIBRE', client: null };
+      createEntity('room-content', `mesa-${i}`, '🪑', `Mesa ${i}`, 'LIBRE');
+    }
+    // Crear Meseros
+    for (let i = 1; i <= nMeseros; i++) {
+      state.meseros[i] = { status: 'LIBRE', client: null };
+      createEntity('room-content', `mes-${i}`, '🤵', `Mesero ${i}`, 'LIBRE');
+    }
+
+    document.getElementById('kitchen-status').textContent = 'OPERANDO';
+    document.getElementById('room-status').textContent = 'ABIERTO';
+  }
+
+  function createEntity(containerId, id, icon, label, status) {
+    const cont = document.getElementById(containerId);
+    const div = document.createElement('div');
+    div.id = id;
+    div.className = 'entity';
+    div.innerHTML = `
+      <div class="entity-icon">${icon}</div>
+      <div class="entity-id">${label}</div>
+      <div class="entity-status">${status}</div>
+    `;
+    cont.appendChild(div);
+  }
+
+  function updateEntityUI(type, id, status, subtext = '') {
+    let elementId = '';
+    if (type === 'cocinero') elementId = `coc-${id}`;
+    else if (type === 'mesero') elementId = `mes-${id}`;
+    else if (type === 'mesa') elementId = `mesa-${id}`;
+    else if (type === 'horno') elementId = `hor-${id}`;
+    else if (type === 'sarten') elementId = `sar-${id}`;
+
+    const el = document.getElementById(elementId);
+    if (!el) return;
+
+    el.className = 'entity';
+    if (status === 'PREPARANDO' || status === 'SIRVIENDO' || status === 'OCUPADA') el.classList.add('busy');
+    else if (status === 'ESPERANDO' || status === 'LISTO') el.classList.add('waiting');
+    else if (status === 'USANDO') el.classList.add('using');
+    else if (status === 'LIBRE') el.classList.add('active');
+
+    el.querySelector('.entity-status').textContent = subtext || status;
+  }
 
   async function startSim() {
     const data = {
@@ -251,11 +396,12 @@
       });
       if (res.ok) {
         isRunning = true;
-        hasStarted = true; // Marcamos que la sesión ha iniciado
+        hasStarted = true;
         updateBadge();
+        initEntities();
         document.getElementById('log-viewer').innerHTML = '';
         lastLogLength = 0;
-        logQueue = []; // Limpiamos la cola
+        logQueue = [];
         stats = { atendidos: 0, deadlocks: 0, totalEspera: 0 };
         document.getElementById('box-deadlocks').classList.remove('alert');
         updateStatsUI();
@@ -274,6 +420,8 @@
       if (res.ok) {
         isRunning = false;
         updateBadge();
+        document.getElementById('kitchen-status').textContent = 'STANDBY';
+        document.getElementById('room-status').textContent = 'CERRADO';
       }
     } catch (e) { }
   }
@@ -288,18 +436,14 @@
   }
 
   async function pollLogs() {
-    if (!hasStarted) return; // No pedimos logs si no hemos iniciado la simulación en esta carga
-
+    if (!hasStarted) return;
     try {
       const res = await fetch('/api/logs');
       const text = await res.text();
       const lines = text.trim().split('\n').filter(Boolean);
-
       if (lines.length > lastLogLength) {
         const newLines = lines.slice(lastLogLength);
         lastLogLength = lines.length;
-        
-        // En lugar de procesar todo, lo metemos a la cola
         newLines.forEach(line => {
           const parts = line.split('|');
           if (parts.length >= 3) {
@@ -310,14 +454,97 @@
     } catch (e) {}
   }
 
-  // Función para procesar la cola de logs "despacio"
   function processQueue() {
     if (logQueue.length === 0) return;
-
     const entry = logQueue.shift();
     const { ts, type, msg } = entry;
     const viewer = document.getElementById('log-viewer');
     const isScrolledToBottom = viewer.scrollHeight - viewer.clientHeight <= viewer.scrollTop + 50;
+
+    // --- Lógica de Estado Visual ---
+    
+    // Mesas
+    if (type === 'MESA') {
+      const mSit = msg.match(/\[Cliente (\d+)\] Se sentó/);
+      const mFree = msg.match(/\[Cliente (\d+)\] Terminó y liberó/);
+      if (mSit) {
+        const cid = mSit[1];
+        const mesaId = Object.keys(state.mesas).find(k => state.mesas[k].status === 'LIBRE');
+        if (mesaId) {
+          state.mesas[mesaId] = { status: 'OCUPADA', client: cid };
+          updateEntityUI('mesa', mesaId, 'OCUPADA', `Cli. ${cid}`);
+        }
+      } else if (mFree) {
+        const cid = mFree[1];
+        const mesaId = Object.keys(state.mesas).find(k => state.mesas[k].client === cid);
+        if (mesaId) {
+          state.mesas[mesaId] = { status: 'LIBRE', client: null };
+          updateEntityUI('mesa', mesaId, 'LIBRE');
+        }
+      }
+    }
+
+    // Cocina
+    if (type === 'COCINA') {
+      const mPrep = msg.match(/\[Cocinero (\d+)\] Preparando orden.*Cliente (\d+)/);
+      const mDone = msg.match(/\[Cocinero (\d+)\] Orden del Cliente (\d+) lista/);
+      if (mPrep) {
+        const coid = mPrep[1];
+        const cid = mPrep[2];
+        state.cocineros[coid] = { status: 'PREPARANDO', client: cid };
+        updateEntityUI('cocinero', coid, 'PREPARANDO', `Cli. ${cid}`);
+      } else if (mDone) {
+        const coid = mDone[1];
+        state.cocineros[coid] = { status: 'LIBRE', client: null };
+        updateEntityUI('cocinero', coid, 'LISTO');
+        setTimeout(() => { if(state.cocineros[coid].status === 'LIBRE') updateEntityUI('cocinero', coid, 'LIBRE'); }, 2000);
+      }
+    }
+
+    // Recursos
+    if (type === 'RECURSO') {
+      const mTookH = msg.match(/\[Cocinero (\d+)\] Tomó el HORNO/);
+      const mTookS = msg.match(/\[Cocinero (\d+)\] Tomó la SARTÉN/);
+      const mFree = msg.match(/\[Cocinero (\d+)\] Liberó HORNO y SARTÉN/);
+      
+      if (mTookH) {
+        const hId = Object.keys(state.hornos).find(k => state.hornos[k].status === 'LIBRE');
+        if (hId) {
+          state.hornos[hId].status = 'OCUPADO';
+          state.hornos[hId].by = mTookH[1];
+          updateEntityUI('horno', hId, 'USANDO', `Coc. ${mTookH[1]}`);
+        }
+      }
+      if (mTookS) {
+        const sId = Object.keys(state.sartenes).find(k => state.sartenes[k].status === 'LIBRE');
+        if (sId) {
+          state.sartenes[sId].status = 'OCUPADO';
+          state.sartenes[sId].by = mTookS[1];
+          updateEntityUI('sarten', sId, 'USANDO', `Coc. ${mTookS[1]}`);
+        }
+      }
+      if (mFree) {
+        const coid = mFree[1];
+        Object.keys(state.hornos).forEach(k => { if(state.hornos[k].by === coid) { state.hornos[k].status = 'LIBRE'; state.hornos[k].by = null; updateEntityUI('horno', k, 'LIBRE'); }});
+        Object.keys(state.sartenes).forEach(k => { if(state.sartenes[k].by === coid) { state.sartenes[k].status = 'LIBRE'; state.sartenes[k].by = null; updateEntityUI('sarten', k, 'LIBRE'); }});
+      }
+    }
+
+    // Meseros
+    if (type === 'MESERO') {
+      const mLev = msg.match(/\[Mesero (\d+)\] Llevando comida.*Cliente (\d+)/);
+      const mEnt = msg.match(/\[Mesero (\d+)\] Entregó comida.*Cliente (\d+)/);
+      if (mLev) {
+        const mid = mLev[1];
+        const cid = mLev[2];
+        state.meseros[mid] = { status: 'SIRVIENDO', client: cid };
+        updateEntityUI('mesero', mid, 'SIRVIENDO', `Cli. ${cid}`);
+      } else if (mEnt) {
+        const mid = mEnt[1];
+        state.meseros[mid] = { status: 'LIBRE', client: null };
+        updateEntityUI('mesero', mid, 'LIBRE');
+      }
+    }
 
     if (type === 'COMIENDO') {
       stats.atendidos++;
@@ -328,25 +555,13 @@
     if (type === 'DEADLOCK' && msg.includes('DETECTADO')) {
       stats.deadlocks++;
       document.getElementById('box-deadlocks').classList.add('alert');
-      
-      const explanation = document.createElement('div');
-      explanation.style.background = '#111';
-      explanation.style.color = '#fff';
-      explanation.style.padding = '10px';
-      explanation.style.margin = '10px 0';
-      explanation.style.borderLeft = '5px solid #ff4000';
-      explanation.innerHTML = `
-        <strong style="color: #ff4000;">[ANÁLISIS DE INTERBLOQUEO]</strong><br>
-        <strong>Causa:</strong> Espera circular entre recursos (Horno/Sartén).<br>
-        <strong>Estado:</strong> Los cocineros entraron en un ciclo de dependencia mutua.<br>
-        <strong>Resolución:</strong> Se forzó la liberación de un recurso (Time-out) para romper el ciclo de Coffman.
-      `;
-      viewer.appendChild(explanation);
     }
     
     if (type === 'SISTEMA' && msg.includes('Restaurante Cerrado')) {
       isRunning = false;
       updateBadge();
+      document.getElementById('kitchen-status').textContent = 'CERRADO';
+      document.getElementById('room-status').textContent = 'CERRADO';
     }
 
     const div = document.createElement('div');
@@ -364,10 +579,8 @@
     document.getElementById('stat-deadlocks').textContent = stats.deadlocks;
   }
 
-  // Polleamos el servidor cada 1 segundo
   setInterval(pollLogs, 1000);
-  // Procesamos la cola visual cada 150ms para que aparezcan "despacio"
-  setInterval(processQueue, 150);
+  setInterval(processQueue, 100);
 </script>
 </body>
 </html>

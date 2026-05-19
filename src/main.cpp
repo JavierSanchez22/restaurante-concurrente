@@ -229,6 +229,7 @@ void hiloCocinero(MemoriaCompartida* mem, int id_cocinero) {
         // Liberar recursos de cocina
         sem_post(&mem->sem_horno);
         sem_post(&mem->sem_sarten);
+        escribirLog("RECURSO", "[Cocinero " + to_string(id_cocinero) + "] Liberó HORNO y SARTÉN.");
 
         // Pasar a cola de listos
         sem_wait(&mem->sem_espacio_listos);
@@ -259,6 +260,7 @@ void hiloMesero(MemoriaCompartida* mem, int id_mesero) {
         sleep(1);
 
         sem_post(&mem->sem_cliente_comiendo[id_cliente]);
+        escribirLog("MESERO", "[Mesero " + to_string(id_mesero) + "] Entregó comida al Cliente " + to_string(id_cliente) + ".");
     }
 }
 
