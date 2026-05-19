@@ -90,17 +90,18 @@
   }
 
   .visual-content {
-    padding: 1rem;
+    padding: 1.5rem;
     display: flex;
     flex-wrap: wrap;
-    gap: 0.75rem;
+    gap: 1rem;
     overflow-y: auto;
     align-content: flex-start;
+    justify-content: center;
   }
 
   .entity {
-    width: 100px;
-    height: 100px;
+    width: 110px;
+    height: 110px;
     border: 2px solid var(--fg);
     display: flex;
     flex-direction: column;
@@ -185,11 +186,12 @@
   .type-COCINA { color: #ff00ff; }
 
   .stats-grid {
-    display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; padding: 1rem; border-bottom: var(--border);
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; padding: 1rem; border-bottom: var(--border);
+    background: #f0f0f0;
   }
-  .stat-box { border: 2px solid var(--fg); padding: 0.5rem; text-align: center; }
-  .stat-box .lbl { font-size: 0.6rem; font-weight: bold; text-transform: uppercase; margin-bottom: 0.25rem; }
-  .stat-box .val { font-size: 1.4rem; font-weight: 900; }
+  .stat-box { border: 2px solid var(--fg); padding: 0.4rem; text-align: center; background: #fff; }
+  .stat-box .lbl { font-size: 0.55rem; font-weight: bold; text-transform: uppercase; margin-bottom: 0.2rem; }
+  .stat-box .val { font-size: 1.2rem; font-weight: 900; }
   .stat-box.alert { background: var(--accent); color: white; }
 </style>
 </head>
@@ -246,6 +248,26 @@
         <div class="stat-box">
           <div class="lbl">Atendidos</div>
           <div class="val" id="stat-atendidos">0</div>
+        </div>
+        <div class="stat-box">
+          <div class="lbl">Mesas Ocupadas</div>
+          <div class="val" id="stat-mesas-occ">0</div>
+        </div>
+        <div class="stat-box">
+          <div class="lbl">Cocineros Ocup.</div>
+          <div class="val" id="stat-coc-occ">0</div>
+        </div>
+        <div class="stat-box">
+          <div class="lbl">Meseros Activos</div>
+          <div class="val" id="stat-mes-occ">0</div>
+        </div>
+        <div class="stat-box">
+          <div class="lbl">Hornos Uso</div>
+          <div class="val" id="stat-hor-occ">0</div>
+        </div>
+        <div class="stat-box">
+          <div class="lbl">Sartenes Uso</div>
+          <div class="val" id="stat-sar-occ">0</div>
         </div>
         <div class="stat-box">
           <div class="lbl">Espera Prom.</div>
@@ -577,10 +599,24 @@
     document.getElementById('stat-atendidos').textContent = stats.atendidos;
     document.getElementById('stat-espera').textContent = stats.atendidos > 0 ? Math.round(stats.totalEspera / stats.atendidos) + 's' : '0s';
     document.getElementById('stat-deadlocks').textContent = stats.deadlocks;
+
+    // Calcular ocupación actual
+    const mesasOcc = Object.values(state.mesas).filter(m => m.status === 'OCUPADA').length;
+    const cocOcc = Object.values(state.cocineros).filter(c => c.status === 'PREPARANDO').length;
+    const mesOcc = Object.values(state.meseros).filter(m => m.status === 'SIRVIENDO').length;
+    const horOcc = Object.values(state.hornos).filter(h => h.status === 'OCUPADO').length;
+    const sarOcc = Object.values(state.sartenes).filter(s => s.status === 'OCUPADO').length;
+
+    document.getElementById('stat-mesas-occ').textContent = mesasOcc;
+    document.getElementById('stat-coc-occ').textContent = cocOcc;
+    document.getElementById('stat-mes-occ').textContent = mesOcc;
+    document.getElementById('stat-hor-occ').textContent = horOcc;
+    document.getElementById('stat-sar-occ').textContent = sarOcc;
   }
 
   setInterval(pollLogs, 1000);
-  setInterval(processQueue, 100);
+  // Procesamos la cola visual cada 400ms para que sea más lento y fácil de seguir
+  setInterval(processQueue, 400);
 </script>
 </body>
 </html>
